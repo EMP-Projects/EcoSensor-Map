@@ -16,7 +16,7 @@
     "@turf/projection": "^7.1.0",
     "@turf/turf": "^7.1.0",
     "@watergis/mapbox-gl-legend": "^1.2.6",
-    "axios": "^1.7.7",
+    "axios": "0.28.0",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
     "mapbox-gl-infobox": "^1.0.9",

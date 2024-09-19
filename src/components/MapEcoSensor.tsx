@@ -14,7 +14,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext} from "@/contexts";
 import {LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from "maplibre-gl";
-import axios from "axios";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -33,7 +32,7 @@ export function MapEcoSensor(props: IMapState) {
             enableHighAccuracy: true
         },
         trackUserLocation: true
-    }), [map]);
+    }), []);
 
     // Add the event geolocate listener to the geoLocate control.
     // This event is fired when the GeolocateControl has determined the user's location.
@@ -56,8 +55,7 @@ export function MapEcoSensor(props: IMapState) {
 
     useEffect(() => {
 
-        if (!props || !divMapRef.current) return;
-        if (map) return;
+        if (!props || map) return;
 
         // Destructure the configuration object.
         const {
@@ -110,7 +108,7 @@ export function MapEcoSensor(props: IMapState) {
         // Set the map instance to the context.
         setMapLibre!(m);
 
-    }, [props, divMapRef.current, map]);
+    }, [props, map, setMapLibre]);
 
     // Initialize the center of the map.
     useEffect(() => {
