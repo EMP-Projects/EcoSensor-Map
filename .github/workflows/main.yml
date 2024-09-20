@@ -29,6 +29,13 @@ jobs:
     - name: Build project
       run: yarn run build
 
+    - name: 'Create env file'
+      run: |
+          cd ${{ env.SOURCE_DIR }}
+          touch .env
+          echo AWS_CLOUDFRONT_URL=${{ secrets.AWS_CLOUDFRONT_URL }} >> .env
+          cat .env
+
     - name: "Configure AWS Credentials"
       # You may pin to the exact commit or the version.
       # uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
