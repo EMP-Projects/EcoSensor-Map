@@ -1,5 +1,5 @@
 import {toWgs84} from "@turf/projection";
-import getGeoJson from "@/test";
+import getGeoJson from "@/_dev";
 
 /**
  * Fetches GeoJSON data from a URL or a local file and converts it to WGS84 projection.

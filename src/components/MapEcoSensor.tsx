@@ -131,24 +131,6 @@ export function MapEcoSensor(props: IMapState) {
     }, [map, geoLocate]);
 
     /**
-     * Redraw the map
-     * @param map
-     * @param sourceName
-     */
-    const reDrawMap = useCallback((sourceName: string) => {
-        if (!map) return;
-
-        // Remove the tiles for a particular source
-        map.style.sourceCaches[sourceName].clearTiles();
-
-        // Load the new tiles for the current viewport (map.transform -> viewport)
-        map.style.sourceCaches[sourceName].update(map.transform);
-
-        // Force a repaint, so that the map will be repainted without you having to touch the map
-        map.triggerRepaint();
-    }, [map]);
-
-    /**
      * Add GeoJson to the map
      * @param map
      * @param source
@@ -166,6 +148,7 @@ export function MapEcoSensor(props: IMapState) {
             // Check if the source already exists
             if (map.getSource(sourceName)) {
                 // Remove the source from the map
+                map.removeLayer(`${sourceName}_multiPolygons`);
                 map.removeLayer(`${sourceName}_polygons`);
                 map.removeLayer(`${sourceName}_lines`);
                 map.removeSource(sourceName);
@@ -179,6 +162,18 @@ export function MapEcoSensor(props: IMapState) {
                 data: data as any
             });
 
+            map.addLayer({
+                id: `${sourceName}_multiPolygons`,
+                type: 'fill',
+                source: sourceName,
+                metadata: { "source:comment": `EcoSensor data multi polygons for ${layer.name}` },
+                paint: {
+                    'fill-color': '#777777',
+                    'fill-opacity': 0.5
+                },
+                filter: ['==', '$type', 'MultiPolygon']
+            });
+
             // Add the layer to the map
             map.addLayer({
                 id: `${sourceName}_polygons`,
@@ -187,7 +182,7 @@ export function MapEcoSensor(props: IMapState) {
                 metadata: { "source:comment": `EcoSensor data polygons for ${layer.name}` },
                 paint: {
                     'fill-color': '#888888',
-                    'fill-opacity': 0.4
+                    'fill-opacity': 0.5
                 },
                 filter: ['==', '$type', 'Polygon']
             });
@@ -203,13 +198,13 @@ export function MapEcoSensor(props: IMapState) {
                     'line-cap': 'round'
                 },
                 paint: {
-                    'line-color': '#888',
+                    'line-color': '#999999',
                     'line-width': 8
                 },
                 filter: ['==', '$type', 'LineString']
             });
         });
-    }, [map, reDrawMap]);
+    }, [map]);
 
     useEffect(() => {
         if (!map || !source) return;
