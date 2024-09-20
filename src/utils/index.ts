@@ -10,7 +10,7 @@ export async function fetchDataAndConvertToWgs84(url: string) : Promise<any> {
 
     try {
         const geoJson = await fetch(url);
-        return toWgs84(geoJson.json());
+        return toWgs84(await geoJson.json());
     } catch (error) {
         console.error(error);
         return null;
