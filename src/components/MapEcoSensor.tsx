@@ -14,6 +14,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext} from "@/contexts";
 import {LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from "maplibre-gl";
+import {fetchDataAndConvertToWgs84} from "@/utils";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -33,6 +34,11 @@ export function MapEcoSensor(props: IMapState) {
         },
         trackUserLocation: true
     }), []);
+
+    map?.on('mousemove', (e) => {
+        console.log(`Mouse move event at ${e.lngLat}`);
+        console.log(JSON.stringify(e.point));
+    });
 
     // Add the event geolocate listener to the geoLocate control.
     // This event is fired when the GeolocateControl has determined the user's location.
@@ -69,7 +75,7 @@ export function MapEcoSensor(props: IMapState) {
         // Create a new map instance with the provided configuration.
         const styleMap = {...style,
             projection : {
-                type: `${projection == EProjection.Wgs84 ? 'globe' : 'mercator'}`
+                "type": `${projection == EProjection.Wgs84 ? "globe" : "mercator"}`
             }
         }
 
@@ -151,25 +157,31 @@ export function MapEcoSensor(props: IMapState) {
 
         if (!map) return;
 
-        _.forEach(source.layers, (layer: IConfiguration) => {
+        _.forEach(source.layers, async (layer: IConfiguration) => {
+            // Fetch the data and convert it to WGS84
+            const data = await fetchDataAndConvertToWgs84(source.url, layer.name);
+            if (process.env.NODE_ENV == 'development') console.log(JSON.stringify(data));
             const sourceName = `${source.name}_${layer.name}`;
-            const url = `${source.url}/${layer.name}`;
 
             // Check if the source already exists
-            if (map.getSource(sourceName))
-                reDrawMap(sourceName);
+            if (map.getSource(sourceName)) {
+                // Remove the source from the map
+                map.removeLayer(`${sourceName}_polygons`);
+                map.removeLayer(`${sourceName}_lines`);
+                map.removeSource(sourceName);
+            }
 
             // Add the source to the map
             map.addSource(sourceName, {
                 type: 'geojson',
                 generateId: true,
                 lineMetrics: true,
-                data: url
+                data: data as any
             });
 
             // Add the layer to the map
             map.addLayer({
-                id: `${sourceName}_lines`,
+                id: `${sourceName}_polygons`,
                 type: 'fill',
                 source: sourceName,
                 metadata: { "source:comment": `EcoSensor data polygons for ${layer.name}` },

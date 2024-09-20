@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "NODE_ENV=development next dev",
+    "build": "NODE_ENV=production next build",
+    "start": "NODE_ENV=production next start",
+    "lint": "NODE_ENV=production next lint"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.651.1",
@@ -28,7 +28,6 @@
     "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
-    "@types/geojson": "^7946.0.14",
     "@types/lodash": "^4.17.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20",

@@ -26,9 +26,9 @@ const styleOsm = {
 };
 
 export const useMapContext = create<IMapState & IMapActions>((set) => ({
-    zoom: 10,
+    zoom: 12,
     style: styleOsm,
-    projection: EProjection.WebMercator,
+    projection: EProjection.Wgs84,
     containerMapRef: '',
     center: [0, 0],
     extent: [0, 0, 0, 0],
