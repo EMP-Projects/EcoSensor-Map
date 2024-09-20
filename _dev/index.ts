@@ -1,7 +1,7 @@
 'use client'
 
-import geoJsonGdc from '@/_dev/data/gioia_del_colle_latest.json';
-import geoJsonSiena from '@/_dev/data/siena_latest.json';
+import geoJsonGdc from './data/gioia_del_colle_latest.json';
+import geoJsonSiena from './data/siena_latest.json';
 
 export default function getGeoJson(pathFile: string) : any {
 

@@ -34,7 +34,7 @@ yarn-error.log*
 .env.stage
 
 # _dev data
-src/_dev/data
+_dev/data
 
 # vercel
 .vercel
