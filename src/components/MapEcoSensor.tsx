@@ -141,8 +141,7 @@ export function MapEcoSensor(props: IMapState) {
 
         _.forEach(source.layers, async (layer: IConfiguration) => {
             // Fetch the data and convert it to WGS84
-            const data = await fetchDataAndConvertToWgs84(source.url, layer.name);
-            if (process.env.NODE_ENV == 'development') console.log(JSON.stringify(data));
+            const data = await fetchDataAndConvertToWgs84(`${source.url}/${layer.name}`);
             const sourceName = `${source.name}_${layer.name}`;
 
             // Check if the source already exists
