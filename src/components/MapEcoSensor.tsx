@@ -159,6 +159,7 @@ export function MapEcoSensor(props: IMapState) {
         if (!geoJson.features) return;
 
         const features : any[] = geoJson.features;
+        const opacity = 0.3;
         _.forEach(features, (feature: any) => {
 
             const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
@@ -179,13 +180,11 @@ export function MapEcoSensor(props: IMapState) {
             const paint : any = feature.geometry.type === 'Polygon'
                 ? {
                     'fill-color': propertyAirQualityNow.color,
-                    'fill-opacity': 0.5
+                    'fill-opacity': opacity
                 } : {
                     'line-color': propertyAirQualityNow.color,
                     'line-width': 5,
-                    'line-opacity': 0.5,
-                    'line-blur': 1
-
+                    'line-opacity': opacity,
                 };
 
             const configLayer : any = {
