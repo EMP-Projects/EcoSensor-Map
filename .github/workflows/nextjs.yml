@@ -78,16 +78,16 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ env.SOURCE_DIR }}
       - name: 'Create env file'
         run: |
             cd ${{ env.SOURCE_DIR }}
             touch .env
             echo AWS_CLOUDFRONT_URL=${{ secrets.AWS_CLOUDFRONT_URL }} >> .env
             cat .env  
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.SOURCE_DIR }}
   # Deployment job
   deploy:
     environment:
