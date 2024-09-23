@@ -4,7 +4,8 @@ const nextConfig = {
     trailingSlash: true,
     crossOrigin: 'anonymous',
     env: {
-        api: process.env.AWS_CLOUDFRONT_URL,
+        cloudFront: process.env.AWS_CLOUDFRONT_URL,
+        api: process.env.API_URL,
     },
     webpack: (config, { isServer }) => {
         if (!isServer) {

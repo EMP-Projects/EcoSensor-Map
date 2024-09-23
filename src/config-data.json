@@ -1,10 +1,12 @@
 [
   {
-    "name": "gioia_del_colle_latest.json",
-    "center": [40.80017, 16.92349]
+    "id": "114f3038-4bcf-4b18-a956-cb1646f7485b",
+    "center": [40.80017, 16.92349],
+    "type": "AirQuality"
   },
   {
-    "name": "siena_latest.json",
-    "center": [43.31862, 11.33160]
+    "id": "0186180b-ed43-48ea-a80b-762ba4c9287d",
+    "center": [43.31862, 11.33160],
+    "type": "AirQuality"
   }
 ]

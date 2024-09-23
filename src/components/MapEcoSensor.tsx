@@ -1,12 +1,13 @@
 'use client'
 
 import {GeolocateControl} from 'maplibre-gl';
+import { DateTime } from 'luxon';
 
 import {
     IConfiguration,
     IMapSource,
     IMapState,
-    EProjection
+    EProjection, IOsm, IAirQuality
 } from "@/types";
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
@@ -131,6 +132,104 @@ export function MapEcoSensor(props: IMapState) {
     }, [map, geoLocate]);
 
     /**
+     * Retrieves a property value from a feature based on the property name.
+     *
+     * @param {any} feature - The feature object containing properties.
+     * @param {string} nameProperty - The name of the property to retrieve.
+     * @returns {any} The value of the specified property.
+     */
+    function getProperty<Type>(feature: any, nameProperty: string): Type {
+        if (process.env.NODE_ENV === 'development') {
+            const propertyObj : any = _.find(feature.properties, prop => prop["key"] === nameProperty);
+            return propertyObj["value"];
+        }
+        return feature.properties[nameProperty];
+    }
+
+    /**
+     * Adds layers to the map based on the provided GeoJSON data.
+     *
+     * @param {Map} map - The MapLibre GL map instance.
+     * @param {string} sourceName - The name of the source to add layers to.
+     * @param {any} geoJson - The GeoJSON data containing the features to add.
+     */
+    const addLayers = (map: Map, sourceName: string, geoJson: any) => {
+
+        if (!map.getSource(sourceName)) return;
+        if (!geoJson.features) return;
+
+        const features : any[] = geoJson.features;
+        _.forEach(features, (feature: any) => {
+
+            const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
+            const propertiesAirQuality : IAirQuality[] = getProperty<IAirQuality[]>(feature, "Data") ;
+
+            const id : number = propertyOsm.id;
+            const layerName : string = `${sourceName}_${id}`;
+            const typeLayer : any = feature.geometry.type === 'Polygon' ? 'fill' : 'line';
+
+            // Filter the air quality data from today
+            const propertiesAirQualityFromToday : IAirQuality[] = _.takeWhile(propertiesAirQuality, (property: IAirQuality) => {
+                const date : DateTime = DateTime.fromISO(property.date);
+                return date.isValid && date.toMillis() > DateTime.utc().toMillis();
+            });
+
+            const propertyAirQualityNow : IAirQuality = _.sortBy(propertiesAirQualityFromToday, (property: IAirQuality) => DateTime.fromISO(property.date)).reverse()[0];
+
+            const paint : any = feature.geometry.type === 'Polygon'
+                ? {
+                    'fill-color': propertyAirQualityNow.color,
+                    'fill-opacity': 0.5
+                } : {
+                    'line-color': propertyAirQualityNow.color,
+                    'line-width': 5,
+                    'line-opacity': 0.5,
+                    'line-blur': 1
+
+                };
+
+            const configLayer : any = {
+                id: layerName,
+                type: typeLayer,
+                source: sourceName,
+                metadata: { "source:comment": `EcoSensor data for ${layerName}` },
+                paint: paint
+            }
+
+            if (feature.geometry.type === 'LineString') {
+                configLayer['layout'] = {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                };
+            }
+
+            map.addLayer(configLayer);
+        });
+    };
+
+    /**
+     * Removes layers from the map based on the provided GeoJSON data.
+     *
+     * @param {Map} map - The MapLibre GL map instance.
+     * @param {string} sourceName - The name of the source to remove layers from.
+     * @param {any} geoJson - The GeoJSON data containing the features to remove.
+     */
+    const removeLayers = (map: Map, sourceName: string, geoJson: any) => {
+
+        if (!map.getSource(sourceName)) return;
+
+        const features: any[] = geoJson.features;
+        _.forEach(features, (feature: any) => {
+            const propertyOsm: IOsm = feature.properties["OSM"];
+            const id: number = propertyOsm.id;
+            const layerName: string = `${sourceName}_${id}`;
+            map.removeLayer(layerName);
+        });
+
+        map.removeSource(sourceName);
+    };
+
+    /**
      * Add GeoJson to the map
      * @param map
      * @param source
@@ -141,17 +240,9 @@ export function MapEcoSensor(props: IMapState) {
 
         _.forEach(source.layers, async (layer: IConfiguration) => {
             // Fetch the data and convert it to WGS84
-            const data = await fetchDataAndConvertToWgs84(`${source.url}/${layer.name}`);
-            const sourceName = `${source.name}_${layer.name}`;
-
-            // Check if the source already exists
-            if (map.getSource(sourceName)) {
-                // Remove the source from the map
-                map.removeLayer(`${sourceName}_multiPolygons`);
-                map.removeLayer(`${sourceName}_polygons`);
-                map.removeLayer(`${sourceName}_lines`);
-                map.removeSource(sourceName);
-            }
+            const data = await fetchDataAndConvertToWgs84(layer.id, layer.type);
+            const sourceName : string = `${source.name}_${layer.id}`;
+            removeLayers(map, sourceName, data);
 
             // Add the source to the map
             map.addSource(sourceName, {
@@ -161,47 +252,7 @@ export function MapEcoSensor(props: IMapState) {
                 data: data as any
             });
 
-            map.addLayer({
-                id: `${sourceName}_multiPolygons`,
-                type: 'fill',
-                source: sourceName,
-                metadata: { "source:comment": `EcoSensor data multi polygons for ${layer.name}` },
-                paint: {
-                    'fill-color': '#777777',
-                    'fill-opacity': 0.5
-                },
-                filter: ['==', '$type', 'MultiPolygon']
-            });
-
-            // Add the layer to the map
-            map.addLayer({
-                id: `${sourceName}_polygons`,
-                type: 'fill',
-                source: sourceName,
-                metadata: { "source:comment": `EcoSensor data polygons for ${layer.name}` },
-                paint: {
-                    'fill-color': '#888888',
-                    'fill-opacity': 0.5
-                },
-                filter: ['==', '$type', 'Polygon']
-            });
-
-            // Add the layer to the map
-            map.addLayer({
-                id: `${sourceName}_lines`,
-                type: 'line',
-                source: sourceName,
-                metadata: { "source:comment": `EcoSensor data lines for ${layer.name}` },
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#999999',
-                    'line-width': 8
-                },
-                filter: ['==', '$type', 'LineString']
-            });
+            addLayers(map, sourceName, data);
         });
     }, [map]);
 
