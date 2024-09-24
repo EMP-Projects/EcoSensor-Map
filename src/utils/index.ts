@@ -16,7 +16,7 @@ export async function fetchDataAndConvertToWgs84(id: string, typeData: string) :
             ? process.env.api
             : process.env.cloudFront;
         // set file data based on the environment
-        const fileData = `${id}_${getDataType(typeData)}_latest.geojson`;
+        const fileData = `${id}_${getDataType(typeData)}_latest.json`;
         // set complete url on the environment
         const url = process.env.NODE_ENV === "development"
             ? `${baseUrl}/measurements?entityKey=${id}:${typeData}&typeMonitoringData=${getDataType(typeData)}`
