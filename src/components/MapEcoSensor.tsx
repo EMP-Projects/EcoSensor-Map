@@ -177,32 +177,35 @@ export function MapEcoSensor(props: IMapState) {
 
             const propertyAirQualityNow : IAirQuality = _.sortBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi).reverse()[0];
 
-            const paint : any = feature.geometry.type === 'Polygon'
-                ? {
-                    'fill-color': propertyAirQualityNow.color,
-                    'fill-opacity': opacity
-                } : {
-                    'line-color': propertyAirQualityNow.color,
-                    'line-width': 1,
-                    'line-opacity': opacity,
-                };
+            if (propertyAirQualityNow?.color) {
 
-            const configLayer : any = {
-                id: layerName,
-                type: typeLayer,
-                source: sourceName,
-                metadata: { "source:comment": `EcoSensor data for ${layerName}` },
-                paint: paint
+                const paint: any = feature.geometry.type === 'Polygon'
+                    ? {
+                        'fill-color': propertyAirQualityNow.color,
+                        'fill-opacity': opacity
+                    } : {
+                        'line-color': propertyAirQualityNow.color,
+                        'line-width': 1,
+                        'line-opacity': opacity,
+                    };
+
+                const configLayer: any = {
+                    id: layerName,
+                    type: typeLayer,
+                    source: sourceName,
+                    metadata: {"source:comment": `EcoSensor data for ${layerName}`},
+                    paint: paint,
+                }
+
+                if (feature.geometry.type === 'LineString') {
+                    configLayer['layout'] = {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    };
+                }
+
+                map.addLayer(configLayer);
             }
-
-            if (feature.geometry.type === 'LineString') {
-                configLayer['layout'] = {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                };
-            }
-
-            map.addLayer(configLayer);
         });
     };
 
