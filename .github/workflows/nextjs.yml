@@ -24,6 +24,9 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
+env:
+  SOURCE_DIR: './out'
+
 jobs:
   # Build job
   build:
@@ -75,10 +78,15 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
+      - name: 'Create env file'
+        run: |
+            touch ${{ env.SOURCE_DIR }}/.env
+            echo AWS_CLOUDFRONT_URL=${{ secrets.AWS_CLOUDFRONT_URL }} >> ${{ env.SOURCE_DIR }}/.env
+            cat ${{ env.SOURCE_DIR }}/.env  
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ${{ env.SOURCE_DIR }}
 
   # Deployment job
   deploy:
