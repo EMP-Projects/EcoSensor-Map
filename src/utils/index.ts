@@ -20,7 +20,7 @@ export async function fetchDataAndConvertToWgs84(id: string, typeData: string) :
         // set complete url on the environment
         const url = process.env.NODE_ENV === "development"
             ? `${baseUrl}/measurements?entityKey=${id}:${typeData}&typeMonitoringData=${getDataType(typeData)}`
-            : `${baseUrl}/${fileData}`;
+            : `${baseUrl}/data/${fileData}`;
         // fetch the GeoJSON data
         const geoJson = await fetch(url);
         // convert the GeoJSON data to WGS84 projection

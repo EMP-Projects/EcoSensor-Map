@@ -172,10 +172,10 @@ export function MapEcoSensor(props: IMapState) {
             // Filter the air quality data from today
             const propertiesAirQualityFromToday : IAirQuality[] = _.takeWhile(propertiesAirQuality, (property: IAirQuality) => {
                 const date : DateTime = DateTime.fromISO(property.date);
-                return date.isValid && date.toMillis() > DateTime.utc().toMillis();
+                return date.isValid && (date.toMillis() >= DateTime.utc().toMillis()) && (date.toMillis() < DateTime.utc().plus({hours: 1}).toMillis());
             });
 
-            const propertyAirQualityNow : IAirQuality = _.sortBy(propertiesAirQualityFromToday, (property: IAirQuality) => DateTime.fromISO(property.date)).reverse()[0];
+            const propertyAirQualityNow : IAirQuality = _.sortBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi).reverse()[0];
 
             const paint : any = feature.geometry.type === 'Polygon'
                 ? {
@@ -183,7 +183,7 @@ export function MapEcoSensor(props: IMapState) {
                     'fill-opacity': opacity
                 } : {
                     'line-color': propertyAirQualityNow.color,
-                    'line-width': 5,
+                    'line-width': 1,
                     'line-opacity': opacity,
                 };
 
