@@ -15,7 +15,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext} from "@/contexts";
 import {LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from "maplibre-gl";
-import {fetchDataAndConvertToWgs84} from "@/utils";
+import {fetchDataAndConvertToWgs84, getProperty} from "@/utils";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -38,7 +38,6 @@ export function MapEcoSensor(props: IMapState) {
 
     map?.on('mousemove', (e) => {
         console.log(`Mouse move event at ${e.lngLat}`);
-        console.log(JSON.stringify(e.point));
     });
 
     // Add the event geolocate listener to the geoLocate control.
@@ -132,21 +131,6 @@ export function MapEcoSensor(props: IMapState) {
     }, [map, geoLocate]);
 
     /**
-     * Retrieves a property value from a feature based on the property name.
-     *
-     * @param {any} feature - The feature object containing properties.
-     * @param {string} nameProperty - The name of the property to retrieve.
-     * @returns {any} The value of the specified property.
-     */
-    function getProperty<Type>(feature: any, nameProperty: string): Type {
-        if (process.env.NODE_ENV === 'development') {
-            const propertyObj : any = _.find(feature.properties, prop => prop["key"] === nameProperty);
-            return propertyObj["value"];
-        }
-        return feature.properties[nameProperty];
-    }
-
-    /**
      * Adds layers to the map based on the provided GeoJSON data.
      *
      * @param {Map} map - The MapLibre GL map instance.
@@ -156,7 +140,7 @@ export function MapEcoSensor(props: IMapState) {
     const addLayers = (map: Map, sourceName: string, geoJson: any) => {
 
         if (!map.getSource(sourceName)) return;
-        if (!geoJson.features) return;
+        if (!geoJson?.features) return;
 
         const features : any[] = geoJson.features;
         const opacity = 0.3;
@@ -243,7 +227,9 @@ export function MapEcoSensor(props: IMapState) {
         _.forEach(source.layers, async (layer: IConfiguration) => {
             // Fetch the data and convert it to WGS84
             const data = await fetchDataAndConvertToWgs84(layer.id, layer.type);
+            // Set the source name
             const sourceName : string = `${source.name}_${layer.id}`;
+            // Remove the layers from the map
             removeLayers(map, sourceName, data);
 
             // Add the source to the map

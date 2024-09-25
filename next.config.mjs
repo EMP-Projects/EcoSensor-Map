@@ -6,6 +6,7 @@ const nextConfig = {
     env: {
         cloudFront: process.env.AWS_CLOUDFRONT_URL,
         api: process.env.API_URL,
+        appEnv: process.env.APP_ENV,
     },
     webpack: (config, { isServer }) => {
         if (!isServer) {
