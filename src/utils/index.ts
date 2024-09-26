@@ -45,7 +45,33 @@ export function getProperty<Type>(feature: any, nameProperty: string): Type {
         return propertyObj["value"];
     }
 
-    return feature.properties[nameProperty];
+    return convertObjectKeysToCamelCase<Type>(feature.properties[nameProperty]);
+}
+
+export function getArrayProperty<Type>(feature: any, nameProperty: string): Type[] {
+    const obj : Type[] = getProperty(feature, nameProperty);
+    return convertArrayObjectKeysToCamelCase<Type>(obj);
+}
+
+/**
+ * Converts the keys of an object to camelCase using lodash.
+ *
+ * @param {Record<string, any>} obj - The object to convert.
+ * @returns {Record<string, any>} The object with keys converted to camelCase.
+ */
+export function convertObjectKeysToCamelCase<Type>(obj: any): Type {
+    const result: any = {};
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const newKey = _.camelCase(key);
+            result[newKey] = obj[key];
+        }
+    }
+    return result;
+}
+
+export function convertArrayObjectKeysToCamelCase<Type>(arrayObj: any[]): Type[] {
+    return _.map(arrayObj, (obj) => convertObjectKeysToCamelCase(obj));
 }
 
 /**

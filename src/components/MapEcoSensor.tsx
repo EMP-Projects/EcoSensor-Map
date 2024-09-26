@@ -15,7 +15,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext} from "@/contexts";
 import {LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from "maplibre-gl";
-import {fetchDataAndConvertToWgs84, getProperty} from "@/utils";
+import {fetchDataAndConvertToWgs84, getArrayProperty, getProperty} from "@/utils";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -147,21 +147,24 @@ export function MapEcoSensor(props: IMapState) {
         _.forEach(features, (feature: any) => {
 
             const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
-            const propertiesAirQuality : IAirQuality[] = getProperty<IAirQuality[]>(feature, "Data") ;
+            const propertiesAirQuality : IAirQuality[] = getArrayProperty<IAirQuality>(feature, "Data") ;
 
             const id : number = propertyOsm.id;
             const layerName : string = `${sourceName}_${id}`;
             const typeLayer : any = feature.geometry.type === 'Polygon' ? 'fill' : 'line';
 
-            // Filter the air quality data from today
-            const propertiesAirQualityFromToday : IAirQuality[] = _.takeWhile(propertiesAirQuality, (property: IAirQuality) => {
-                const date : DateTime = DateTime.fromISO(property.date);
-                return date.isValid && (date.toMillis() >= DateTime.utc().toMillis()) && (date.toMillis() < DateTime.utc().plus({hours: 1}).toMillis());
+            const propertiesAirQualitySorted = _.sortBy(propertiesAirQuality, (property: IAirQuality) => property.date);
+
+            const propertiesAirQualityFromToday : IAirQuality[] = _.filter(propertiesAirQualitySorted, (property: IAirQuality) => {
+                const dateAq : number = DateTime.fromISO(property.date).toMillis();
+                const dateStart : number = DateTime.now().toUTC().toMillis();
+                const dateEnd : number = DateTime.now().plus({hours: 1}).toUTC().toMillis();
+                return dateAq > dateStart && dateAq <= dateEnd && property.color != "";
             });
 
-            const propertyAirQualityNow : IAirQuality = _.sortBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi).reverse()[0];
+            const propertyAirQualityNow : IAirQuality | undefined = _.maxBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi);
 
-            if (propertyAirQualityNow?.color) {
+            if (propertyAirQualityNow) {
 
                 const paint: any = feature.geometry.type === 'Polygon'
                     ? {
