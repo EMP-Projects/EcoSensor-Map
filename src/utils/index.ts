@@ -1,5 +1,5 @@
 import {toWgs84} from "@turf/projection";
-import {ETypeMonitoringData} from "@/types";
+import {EPollution, ETypeMonitoringData} from "@/types";
 import _ from "lodash";
 
 /**
@@ -152,5 +152,79 @@ export function getPrefixBucket(dataType: string) : string | null {
             return 'landslide';
         default:
             return null;
+    }
+}
+
+/**
+ * Returns a record of EPollution enum values and their corresponding textual descriptions.
+ *
+ * @returns {Record<EPollution, string>} A record where the keys are EPollution enum values and the values are their descriptions.
+ */
+export function getPollutionDescriptions(): Record<EPollution, string> {
+    return {
+        [EPollution.CarbonMonoxide]: "Carbon Monoxide",
+        [EPollution.NitrogenDioxide]: "Nitrogen Dioxide",
+        [EPollution.SulphurDioxide]: "Sulphur Dioxide",
+        [EPollution.Ozone]: "Ozone",
+        [EPollution.Dust]: "Dust",
+        [EPollution.Ammonia]: "Ammonia",
+        [EPollution.Pm10]: "PM10",
+        [EPollution.Pm25]: "PM2.5",
+        [EPollution.AerosolOpticalDepth]: "Aerosol Optical Depth",
+        [EPollution.UvIndex]: "UV Index",
+        [EPollution.UvIndexClearSky]: "UV Index Clear Sky",
+        [EPollution.AlderPollen]: "Alder Pollen",
+        [EPollution.BirchPollen]: "Birch Pollen",
+        [EPollution.GrassPollen]: "Grass Pollen",
+        [EPollution.MugwortPollen]: "Mugwort Pollen",
+        [EPollution.OlivePollen]: "Olive Pollen",
+        [EPollution.RagweedPollen]: "Ragweed Pollen"
+    };
+}
+
+/**
+ * Returns the textual representation of a given pollution type.
+ *
+ * @param {EPollution} pollution - The pollution type as an enum value.
+ * @returns {string} The textual representation of the pollution type.
+ */
+export function getPollutionText(pollution: EPollution): string {
+    switch (pollution) {
+        case EPollution.CarbonMonoxide:
+            return "Carbon Monoxide";
+        case EPollution.NitrogenDioxide:
+            return "Nitrogen Dioxide";
+        case EPollution.SulphurDioxide:
+            return "Sulphur Dioxide";
+        case EPollution.Ozone:
+            return "Ozone";
+        case EPollution.Dust:
+            return "Dust";
+        case EPollution.Ammonia:
+            return "Ammonia";
+        case EPollution.Pm10:
+            return "PM10";
+        case EPollution.Pm25:
+            return "PM2.5";
+        case EPollution.AerosolOpticalDepth:
+            return "Aerosol Optical Depth";
+        case EPollution.UvIndex:
+            return "UV Index";
+        case EPollution.UvIndexClearSky:
+            return "UV Index Clear Sky";
+        case EPollution.AlderPollen:
+            return "Alder Pollen";
+        case EPollution.BirchPollen:
+            return "Birch Pollen";
+        case EPollution.GrassPollen:
+            return "Grass Pollen";
+        case EPollution.MugwortPollen:
+            return "Mugwort Pollen";
+        case EPollution.OlivePollen:
+            return "Olive Pollen";
+        case EPollution.RagweedPollen:
+            return "Ragweed Pollen";
+        default:
+            return "";
     }
 }

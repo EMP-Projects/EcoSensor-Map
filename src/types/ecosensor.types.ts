@@ -16,6 +16,26 @@ export interface IOsm {
     timeStamp: string;
 }
 
+export enum EPollution {
+    CarbonMonoxide = 0,
+    NitrogenDioxide = 1,
+    SulphurDioxide = 2,
+    Ozone = 3,
+    Dust = 4,
+    Ammonia = 5,
+    Pm10 = 6,
+    Pm25 = 7,
+    AerosolOpticalDepth = 8,
+    UvIndex = 9,
+    UvIndexClearSky = 10,
+    AlderPollen = 11,
+    BirchPollen = 12,
+    GrassPollen = 13,
+    MugwortPollen = 14,
+    OlivePollen = 15,
+    RagweedPollen = 16,
+}
+
 /**
  * Interface representing air quality data.
  */
