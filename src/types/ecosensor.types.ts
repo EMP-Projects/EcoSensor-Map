@@ -1,4 +1,11 @@
 
+export interface IAirQualityLayer {
+    layerName : string;
+    typeLayer : any;
+    paint: any;
+    typeGeometry: string;
+    airQuality : IAirQuality | null | undefined;
+}
 
 export interface IOsm {
     type: string;

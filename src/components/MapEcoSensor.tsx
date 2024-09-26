@@ -1,28 +1,23 @@
 'use client'
 
-import {GeolocateControl} from 'maplibre-gl';
-import { DateTime } from 'luxon';
+import {GeolocateControl, LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from 'maplibre-gl';
+import {DateTime} from 'luxon';
 
-import {
-    IConfiguration,
-    IMapSource,
-    IMapState,
-    EProjection, IOsm, IAirQuality
-} from "@/types";
+import {EProjection, IAirQuality, IAirQualityLayer, IConfiguration, IMapSource, IMapState, IOsm} from "@/types";
 
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext} from "@/contexts";
-import {LngLat, LngLatBounds, Map, MapOptions, NavigationControl} from "maplibre-gl";
 import {fetchDataAndConvertToWgs84, getArrayProperty, getProperty} from "@/utils";
+import {useViewportSize} from '@mantine/hooks';
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
     const [position, setPosition] = useState<number[]>([]);
     const containerMapRef = useRef<HTMLDivElement>(null);
     const divMapRef = useRef<HTMLDivElement>(null);
-
+    const { height, width } = useViewportSize();
     const { source } = props;
 
     // Get the map context
@@ -130,6 +125,47 @@ export function MapEcoSensor(props: IMapState) {
         map.addControl(geoLocate, 'top-right');
     }, [map, geoLocate]);
 
+    const filterGeoJson = (geoJson: any, sourceName: string) : IAirQualityLayer[] => {
+
+        const opacity = 0.3;
+
+        const layers : IAirQualityLayer[] = _.map(geoJson.features, (feature: any) => {
+            const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
+            const propertiesAirQuality : IAirQuality[] = getArrayProperty<IAirQuality>(feature, "Data") ;
+            const propertiesAirQualitySorted : IAirQuality[] = _.sortBy(propertiesAirQuality, (property: IAirQuality) => property.date);
+
+            const propertiesAirQualityFromToday : IAirQuality[] = _.filter(propertiesAirQualitySorted, (property: IAirQuality) => {
+                const dateAq : number = DateTime.fromISO(property.date).toMillis();
+                const dateStart : number = DateTime.now().toUTC().toMillis();
+                const dateEnd : number = DateTime.now().plus({hours: 1}).toUTC().toMillis();
+                return dateAq > dateStart && dateAq <= dateEnd && property.color != "";
+            });
+
+            const propertyAirQualityNow : IAirQuality | undefined = _.maxBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi);
+
+            const paint: any = feature.geometry.type === 'Polygon'
+                ? {
+                    'fill-color': propertyAirQualityNow?.color,
+                    'fill-opacity': opacity
+                } : {
+                    'line-color': propertyAirQualityNow?.color,
+                    'line-width': 1,
+                    'line-opacity': opacity,
+                };
+
+            return {
+                layerName : `${sourceName}_${propertyOsm.id}`,
+                typeLayer : feature.geometry.type === 'Polygon' ? 'fill' : 'line',
+                paint: paint,
+                typeGeometry: feature.geometry.type,
+                airQuality : propertyAirQualityNow
+            }
+        });
+
+        const layersFiltered : IAirQualityLayer[] = _.filter(layers, (layer: IAirQualityLayer) => layer.airQuality != null);
+        return _.sortBy(layersFiltered, (layer: IAirQualityLayer) => layer.airQuality?.europeanAqi);
+    }
+
     /**
      * Adds layers to the map based on the provided GeoJSON data.
      *
@@ -142,57 +178,26 @@ export function MapEcoSensor(props: IMapState) {
         if (!map.getSource(sourceName)) return;
         if (!geoJson?.features) return;
 
-        const features : any[] = geoJson.features;
-        const opacity = 0.3;
-        _.forEach(features, (feature: any) => {
+        const layers = filterGeoJson(geoJson, sourceName);
 
-            const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
-            const propertiesAirQuality : IAirQuality[] = getArrayProperty<IAirQuality>(feature, "Data") ;
+        _.forEach(layers, (layer: IAirQualityLayer) => {
 
-            const id : number = propertyOsm.id;
-            const layerName : string = `${sourceName}_${id}`;
-            const typeLayer : any = feature.geometry.type === 'Polygon' ? 'fill' : 'line';
-
-            const propertiesAirQualitySorted = _.sortBy(propertiesAirQuality, (property: IAirQuality) => property.date);
-
-            const propertiesAirQualityFromToday : IAirQuality[] = _.filter(propertiesAirQualitySorted, (property: IAirQuality) => {
-                const dateAq : number = DateTime.fromISO(property.date).toMillis();
-                const dateStart : number = DateTime.now().toUTC().toMillis();
-                const dateEnd : number = DateTime.now().plus({hours: 1}).toUTC().toMillis();
-                return dateAq > dateStart && dateAq <= dateEnd && property.color != "";
-            });
-
-            const propertyAirQualityNow : IAirQuality | undefined = _.maxBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi);
-
-            if (propertyAirQualityNow) {
-
-                const paint: any = feature.geometry.type === 'Polygon'
-                    ? {
-                        'fill-color': propertyAirQualityNow.color,
-                        'fill-opacity': opacity
-                    } : {
-                        'line-color': propertyAirQualityNow.color,
-                        'line-width': 1,
-                        'line-opacity': opacity,
-                    };
-
-                const configLayer: any = {
-                    id: layerName,
-                    type: typeLayer,
-                    source: sourceName,
-                    metadata: {"source:comment": `EcoSensor data for ${layerName}`},
-                    paint: paint,
-                }
-
-                if (feature.geometry.type === 'LineString') {
-                    configLayer['layout'] = {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    };
-                }
-
-                map.addLayer(configLayer);
+            const configLayer: any = {
+                id: layer.layerName,
+                type: layer.typeLayer,
+                source: sourceName,
+                metadata: {"source:comment": `EcoSensor data for ${layer.layerName}`},
+                paint: layer.paint,
             }
+
+            if (layer.typeGeometry === 'LineString') {
+                configLayer['layout'] = {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                };
+            }
+
+            map.addLayer(configLayer);
         });
     };
 
@@ -255,8 +260,8 @@ export function MapEcoSensor(props: IMapState) {
 
     return (
         <>
-            <div ref={containerMapRef} className="z-0 absolute top-0 left-0 w-full h-full">
-                <div ref={divMapRef} className="z-0 absolute top-0 left-0 w-full h-full" />
+            <div ref={containerMapRef}>
+                <div ref={divMapRef} style={{ width: width, height: height - 56, position: 'relative' }} />
             </div>
         </>
     );
