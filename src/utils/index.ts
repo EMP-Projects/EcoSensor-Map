@@ -1,6 +1,7 @@
 import {toWgs84} from "@turf/projection";
 import {EPollution, ETypeMonitoringData} from "@/types";
 import _ from "lodash";
+import chroma from 'chroma-js';
 
 /**
  * Fetches GeoJSON data from a URL or a local file and converts it to WGS84 projection.
@@ -153,6 +154,32 @@ export function getPrefixBucket(dataType: string) : string | null {
         default:
             return null;
     }
+}
+
+/**
+ * Returns the EPollution enum value corresponding to the given textual description.
+ *
+ * @param {string} value - The textual description of the pollution type.
+ * @returns {EPollution | undefined} The EPollution enum value corresponding to the description, or undefined if not found.
+ */
+export function getPollutionKeyByValue(value: string): EPollution | undefined {
+    const descriptions = getPollutionDescriptions();
+    return Object.keys(descriptions).find(key => descriptions[key as unknown as EPollution] === value) as EPollution | undefined;
+}
+
+export function generateColorScale() : string[] {
+    const scale = chroma.scale(['green', 'red']).domain([1, 1000]);
+    const colors = [];
+    for (let i = 1; i <= 1000; i += 100) {
+        colors.push(scale(i).hex());
+    }
+    return colors;
+}
+
+export function getNewColorScale(value: number) : string {
+    const colors : string[] = generateColorScale();
+    const valueInt : number = value > 1000 ? 100 : Math.floor(value) / 100;
+    return colors[valueInt];
 }
 
 /**

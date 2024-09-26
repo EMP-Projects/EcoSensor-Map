@@ -3257,6 +3257,11 @@
     d3-voronoi "1.1.2"
     tslib "^2.6.2"
 
+"@types/chroma-js@^2.4.4":
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/@types/chroma-js/-/chroma-js-2.4.4.tgz#254dddff54568ff8e5d0dcdb071871a458fdfd31"
+  integrity sha512-/DTccpHTaKomqussrn+ciEvfW4k6NAHzNzs/sts1TCqg333qNxOhy8TNIoQCmbGG3Tl8KdEhkGAssb1n3mTXiQ==
+
 "@types/d3-array@^3.0.3":
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/@types/d3-array/-/d3-array-3.2.1.tgz#1f6658e3d2006c4fceac53fde464166859f8b8c5"
@@ -3878,6 +3883,11 @@ chokidar@^3.5.3:
     readdirp "~3.6.0"
   optionalDependencies:
     fsevents "~2.3.2"
+
+chroma-js@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/chroma-js/-/chroma-js-3.1.1.tgz#380103ce1f8bb119be2b18303d598b3c113cf6b1"
+  integrity sha512-CGr6w73Gi86142RWqZ1RjED/CyduYw2vMTikQZUvr2jGIihnZlMo/Kzm9rYHWDP2pJc6eebwc8CkX0iteBon+A==
 
 classnames@^2.3.2:
   version "2.5.1"

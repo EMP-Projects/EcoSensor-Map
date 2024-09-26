@@ -73,3 +73,11 @@ export interface IAirQuality {
     /** Timestamp of the air quality measurement. */
     timeStamp: string;
 }
+
+export interface IEcoSensorState {
+    pollutionSelected?: EPollution | undefined;
+}
+
+export interface IEcoSensorActions {
+    setPollutionSelected: (value: EPollution | undefined) => void;
+}

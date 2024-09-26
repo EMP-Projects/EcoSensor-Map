@@ -34,6 +34,7 @@
     "@watergis/mapbox-gl-legend": "^1.2.6",
     "axios": "0.28.0",
     "bootstrap": "^5.3.3",
+    "chroma-js": "^3.1.1",
     "embla-carousel-react": "^8.3.0",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
@@ -48,6 +49,7 @@
     "zustand": "^5.0.0-rc.2"
   },
   "devDependencies": {
+    "@types/chroma-js": "^2.4.4",
     "@types/lodash": "^4.17.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20",

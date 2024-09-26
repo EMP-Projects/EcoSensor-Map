@@ -30,7 +30,7 @@ export default function RootLayout({
             <title>EcoSensor</title>
           </head>
           <body>
-            <MantineProvider>
+            <MantineProvider theme={theme}>
                 <Header />
                 {children}
             </MantineProvider>
