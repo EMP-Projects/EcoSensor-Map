@@ -1,26 +1,16 @@
 import {toWgs84} from "@turf/projection";
-import {EPollution, ETypeMonitoringData} from "@/types";
+import {EPollution, ETypeMonitoringData, IAirQualityData} from "@/types";
 import _ from "lodash";
 import chroma from 'chroma-js';
 
-/**
- * Fetches GeoJSON data from a URL or a local file and converts it to WGS84 projection.
- *
- * @param id - The ID of the GeoJSON data.
- * @param typeData - The type of monitoring data.
- * @returns {Promise<any>} A promise that resolves to the converted GeoJSON data in WGS84 projection, or null if an error occurs.
- */
-export async function fetchDataAndConvertToWgs84(id: string, typeData: string) : Promise<any> {
+
+export async function fetchAirQualityDataAndConvertToWgs84(airQualityData : IAirQualityData) : Promise<any> {
 
     try {
-        // set url based on the environment
-        const baseUrl = IsDevelopment() ? process.env.api : process.env.cloudFront;
-        // set file data based on the environment
-        const fileData = `${id}_${getDataType(typeData)}_latest.json`;
         // set complete url on the environment
         const url = IsDevelopment()
-            ? `${baseUrl}/measurements?entityKey=${id}:${typeData}&typeMonitoringData=${getDataType(typeData)}`
-            : `${baseUrl}/${getPrefixBucket(typeData)}/${fileData}`;
+            ? `${process.env.api}/measurements/air-quality/?entityKey=${airQualityData.entityKey}:AirQuality&typeMonitoringData=${airQualityData.typeMonitoringData}&pollution=${airQualityData.pollution}`
+            : `${process.env.cloudFront}/air_quality/${airQualityData.data}`;
         // fetch the GeoJSON data
         const geoJson = await fetch(url);
         // convert the GeoJSON data to WGS84 projection
@@ -85,32 +75,22 @@ export function IsDevelopment() : boolean {
 }
 
 /**
- * Fetches the next timestamp for a given ID and type of monitoring data.
+ * Fetches air quality data from a remote source.
  *
- * @param {string} id - The ID of the entity to fetch the next timestamp for.
- * @param {string} typeData - The type of monitoring data.
- * @returns {Promise<any>} A promise that resolves to the next timestamp as a string, or null if an error occurs.
+ * @returns {Promise<IAirQualityData[] | undefined>} A promise that resolves to an array of IAirQualityData objects, or undefined if an error occurs.
  */
-export async function fetchNextTimeStamp(id: string, typeData: string) : Promise<any> {
+export async function fetchAirQualityData() : Promise<IAirQualityData[] | undefined> {
 
     try {
-        // set url based on the environment
-        const baseUrl = IsDevelopment()
-            ? process.env.api
-            : process.env.cloudFront;
-        // set file data based on the environment
-        const fileNextTs = `next_ts_${id}_${getDataType(typeData)}.txt`;
-        // set complete url on the environment
-        const url = IsDevelopment()
-            ? `${baseUrl}/measurements/next-ts?entityKey=${id}:${typeData}&typeMonitoringData=${getDataType(typeData)}`
-            : `${baseUrl}/${getPrefixBucket(typeData)}/${fileNextTs}`;
-        // fetch the next timestamp
+        // Set file data based on the environment
+        const url : string = `${process.env.cloudFront}/air_quality/map.json`;
+        // Fetch the configuration data
         const geoJson = await fetch(url);
-        // return the next timestamp
-        return await geoJson.text();
+        // Return the parsed JSON data as an array of IAirQualityData objects
+        return await geoJson.json() as IAirQualityData[];
     } catch (error) {
         console.error(error);
-        return null;
+        return undefined;
     }
 }
 
@@ -130,27 +110,6 @@ export function getDataType(dataType: string) : number | null {
             return ETypeMonitoringData.Flood as number;
         case "LandSlide":
             return ETypeMonitoringData.LandSlide as number;
-        default:
-            return null;
-    }
-}
-
-/**
- * Returns the corresponding prefix bucket string based on the provided data type.
- *
- * @param {string} dataType - The type of monitoring data as a string.
- * @returns {string | null} The corresponding prefix bucket string, or null if the data type is not recognized.
- */
-export function getPrefixBucket(dataType: string) : string | null {
-
-    // switch statement to return the corresponding prefix bucket string
-    switch(dataType) {
-        case "AirQuality":
-            return 'air_quality';
-        case "Flood":
-            return 'flood';
-        case "LandSlide":
-            return 'landslide';
         default:
             return null;
     }
@@ -178,7 +137,7 @@ export function generateColorScale() : string[] {
 
 export function getNewColorScale(value: number) : string {
     const colors : string[] = generateColorScale();
-    const valueInt : number = value > 1000 ? 100 : Math.floor(value) / 100;
+    const valueInt : number = value > 1000 ? 100 : Math.round(value / 100);
     return colors[valueInt];
 }
 
@@ -193,19 +152,8 @@ export function getPollutionDescriptions(): Record<EPollution, string> {
         [EPollution.NitrogenDioxide]: "Nitrogen Dioxide",
         [EPollution.SulphurDioxide]: "Sulphur Dioxide",
         [EPollution.Ozone]: "Ozone",
-        [EPollution.Dust]: "Dust",
-        [EPollution.Ammonia]: "Ammonia",
         [EPollution.Pm10]: "PM10",
-        [EPollution.Pm25]: "PM2.5",
-        [EPollution.AerosolOpticalDepth]: "Aerosol Optical Depth",
-        [EPollution.UvIndex]: "UV Index",
-        [EPollution.UvIndexClearSky]: "UV Index Clear Sky",
-        [EPollution.AlderPollen]: "Alder Pollen",
-        [EPollution.BirchPollen]: "Birch Pollen",
-        [EPollution.GrassPollen]: "Grass Pollen",
-        [EPollution.MugwortPollen]: "Mugwort Pollen",
-        [EPollution.OlivePollen]: "Olive Pollen",
-        [EPollution.RagweedPollen]: "Ragweed Pollen"
+        [EPollution.Pm25]: "PM2.5"
     };
 }
 
@@ -225,32 +173,10 @@ export function getPollutionText(pollution: EPollution): string {
             return "Sulphur Dioxide";
         case EPollution.Ozone:
             return "Ozone";
-        case EPollution.Dust:
-            return "Dust";
-        case EPollution.Ammonia:
-            return "Ammonia";
         case EPollution.Pm10:
             return "PM10";
         case EPollution.Pm25:
             return "PM2.5";
-        case EPollution.AerosolOpticalDepth:
-            return "Aerosol Optical Depth";
-        case EPollution.UvIndex:
-            return "UV Index";
-        case EPollution.UvIndexClearSky:
-            return "UV Index Clear Sky";
-        case EPollution.AlderPollen:
-            return "Alder Pollen";
-        case EPollution.BirchPollen:
-            return "Birch Pollen";
-        case EPollution.GrassPollen:
-            return "Grass Pollen";
-        case EPollution.MugwortPollen:
-            return "Mugwort Pollen";
-        case EPollution.OlivePollen:
-            return "Olive Pollen";
-        case EPollution.RagweedPollen:
-            return "Ragweed Pollen";
         default:
             return "";
     }

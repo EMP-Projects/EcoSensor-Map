@@ -6,9 +6,8 @@ import {DateTime} from 'luxon';
 import {
     EPollution,
     EProjection,
-    IAirQuality,
+    IAirQuality, IAirQualityData,
     IAirQualityLayer,
-    IConfiguration,
     IMapSource,
     IMapState,
     IOsm
@@ -18,11 +17,18 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import _ from 'lodash';
 import {useMapContext, useEcoSensorContext} from "@/contexts";
-import {fetchDataAndConvertToWgs84, getArrayProperty, getNewColorScale, getProperty} from "@/utils";
+import {
+    fetchAirQualityDataAndConvertToWgs84,
+    getArrayProperty,
+    getNewColorScale,
+    getProperty
+} from "@/utils";
 import {useViewportSize} from '@mantine/hooks';
+import {LoadingOverlay} from "@mantine/core";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [position, setPosition] = useState<number[]>([]);
     const containerMapRef = useRef<HTMLDivElement>(null);
     const divMapRef = useRef<HTMLDivElement>(null);
@@ -32,7 +38,7 @@ export function MapEcoSensor(props: IMapState) {
     const { pollutionSelected } = useEcoSensorContext();
 
     // Get the map context
-    const { setMapLibre } = useMapContext();
+    const { setMapLibre, center } = useMapContext();
 
     // Initialize the geoLocate control.
     const geoLocate = useMemo(() => new GeolocateControl({
@@ -64,6 +70,11 @@ export function MapEcoSensor(props: IMapState) {
     geoLocate?.on('outofmaxbounds', () => {
         console.log('A geoLocate outofmaxbounds event has occurred.')
     });
+
+    useEffect(() => {
+        if (!map || !center || center[0] <= 0 || center[1] <= 0) return;
+        map.setCenter(new LngLat(center[0], center[1]));
+    }, [map, center]);
 
     useEffect(() => {
 
@@ -136,25 +147,42 @@ export function MapEcoSensor(props: IMapState) {
         map.addControl(geoLocate, 'top-right');
     }, [map, geoLocate]);
 
+    /**
+     * Filters GeoJSON data to create an array of air quality layers.
+     *
+     * @param {any} geoJson - The GeoJSON data containing the features to filter.
+     * @param {string} sourceName - The name of the source to associate with the layers.
+     * @returns {IAirQualityLayer[]} An array of air quality layers.
+     */
     const filterGeoJson = useCallback((geoJson: any, sourceName: string) : IAirQualityLayer[] => {
 
         const opacity = 0.3;
 
+        // Filter the GeoJson data
         const layers : IAirQualityLayer[] = _.map(geoJson.features, (feature: any) => {
             const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
             const propertiesAirQuality : IAirQuality[] = getArrayProperty<IAirQuality>(feature, "Data") ;
             const propertiesAirQualitySorted : IAirQuality[] = _.sortBy(propertiesAirQuality, (property: IAirQuality) => property.date);
 
+            // Filter the air quality data to get the properties from today
             const propertiesAirQualityFromToday : IAirQuality[] = _.filter(propertiesAirQualitySorted, (property: IAirQuality) => {
+                // Get the date in milliseconds
                 const dateAq : number = DateTime.fromISO(property.date).toMillis();
+                // Get the start and end date in milliseconds from now to 1 hour
                 const dateStart : number = DateTime.now().toUTC().toMillis();
                 const dateEnd : number = DateTime.now().plus({hours: 1}).toUTC().toMillis();
-                return dateAq > dateStart && dateAq <= dateEnd && property.pollution == (pollutionSelected ?? EPollution.Pm25);
+                // Return the properties from today
+                return dateAq > dateStart && dateAq <= dateEnd;
             });
 
+            // Get the air quality property with the highest value
             const propertyAirQualityNow : IAirQuality | undefined = _.maxBy(propertiesAirQualityFromToday, (property: IAirQuality) => property.europeanAqi);
-            const color : string = propertyAirQualityNow?.color ?? getNewColorScale(propertyAirQualityNow?.value ?? 0);
+            // Get the color based on the air quality value
+            const color : string = !propertyAirQualityNow?.color || propertyAirQualityNow?.color == ""
+                ? getNewColorScale(propertyAirQualityNow?.value ?? 0)
+                : propertyAirQualityNow?.color;
 
+            // Set the paint properties based on the geometry type
             const paint: any = feature.geometry.type === 'Polygon'
                 ? {
                     'fill-color': color,
@@ -176,7 +204,7 @@ export function MapEcoSensor(props: IMapState) {
 
         const layersFiltered : IAirQualityLayer[] = _.filter(layers, (layer: IAirQualityLayer) => layer.airQuality != null);
         return _.sortBy(layersFiltered, (layer: IAirQualityLayer) => layer.airQuality?.europeanAqi);
-    }, [pollutionSelected]);
+    }, []);
 
     /**
      * Adds layers to the map based on the provided GeoJSON data.
@@ -240,24 +268,27 @@ export function MapEcoSensor(props: IMapState) {
      */
     const addGeoJson = useCallback(async (source: IMapSource) => {
 
-        if (!map) return;
+        if (!map || !source || _.size(source.layers) == 0) return;
 
-        _.forEach(source.layers, async (layer: IConfiguration) => {
+        const layers : IAirQualityData[] = _.filter(source.layers, (layer: IAirQualityData) => layer.pollution as EPollution == pollutionSelected);
+
+        if (_.size(layers) == 0) return;
+
+        setIsLoading(true);
+
+        _.forEach(layers, async (layer: IAirQualityData) => {
 
             // Fetch the data and convert it to WGS84
-            const data = await fetchDataAndConvertToWgs84(layer.id, layer.type);
-
-            // Set the source name
-            const sourceName : string = `${source.name}_${layer.id}`;
+            const data = await fetchAirQualityDataAndConvertToWgs84(layer);
 
             // Filter the GeoJson data
-            const layers = filterGeoJson(data, sourceName);
+            const layers = filterGeoJson(data, layer.entityKey);
 
             // Remove the layers from the map
-            removeLayers(layers, sourceName);
+            removeLayers(layers, layer.entityKey);
 
             // Add the source to the map
-            map.addSource(sourceName, {
+            map.addSource(layer.entityKey, {
                 type: 'geojson',
                 generateId: true,
                 lineMetrics: true,
@@ -265,12 +296,15 @@ export function MapEcoSensor(props: IMapState) {
             });
 
             // Add the layers to the map
-            addLayers(layers, sourceName);
+            addLayers(layers, layer.entityKey);
         });
-    }, [map, addLayers, removeLayers, filterGeoJson]);
+
+        setIsLoading(false);
+        map.redraw();
+    }, [map, addLayers, removeLayers, filterGeoJson, pollutionSelected]);
 
     useEffect(() => {
-        if (!map || !source) return;
+        if (!map || !source || !pollutionSelected) return;
         // Add the GeoJson to the map
         map.on('load', async () => await addGeoJson(source));
     }, [map, addGeoJson, setMapLibre, source, pollutionSelected]);
@@ -283,6 +317,7 @@ export function MapEcoSensor(props: IMapState) {
 
     return (
         <>
+            <LoadingOverlay visible={isLoading} zIndex={9000} />
             <div ref={containerMapRef}>
                 <div ref={divMapRef} style={{ width: width, height: height - 56, position: 'relative' }} />
             </div>

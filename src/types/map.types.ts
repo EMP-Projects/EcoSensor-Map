@@ -1,5 +1,5 @@
 import {Map} from "maplibre-gl";
-import {IConfiguration} from "@/types";
+import {IAirQualityData} from "@/types";
 
 export interface IMapProjection {
     style: any;
@@ -34,7 +34,7 @@ export interface IMapActions {
 export interface IMapSource {
     url: string;
     name: string;
-    layers: IConfiguration[];
+    layers?: IAirQualityData[] | undefined;
 }
 
 export enum EProjection {

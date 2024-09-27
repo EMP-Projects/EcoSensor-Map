@@ -1,39 +1,76 @@
 
+/**
+ * Interface representing an air quality layer.
+ */
 export interface IAirQualityLayer {
-    layerName : string;
-    typeLayer : any;
+    /** Name of the layer. */
+    layerName: string;
+    /** Type of the layer. */
+    typeLayer: any;
+    /** Paint properties of the layer. */
     paint: any;
+    /** Geometry type of the layer. */
     typeGeometry: string;
-    airQuality : IAirQuality | null | undefined;
+    /** Air quality data associated with the layer. */
+    airQuality: IAirQuality | null | undefined;
 }
 
+/**
+ * Interface representing OpenStreetMap (OSM) data.
+ */
 export interface IOsm {
+    /** Type of the OSM entity. */
     type: string;
-    tags: string [];
+    /** Tags associated with the OSM entity. */
+    tags: string[];
+    /** Name of the OSM entity. */
     name: string;
+    /** Unique identifier of the OSM entity. */
     id: number;
+    /** Entity key of the OSM entity. */
     entityKey: string;
+    /** Timestamp of the OSM data. */
     timeStamp: string;
 }
 
+/**
+ * Interface representing air quality data.
+ */
+export interface IAirQualityData {
+    /** Type of pollution. */
+    pollution: EPollution;
+    /** Name of the data bucket. */
+    bucketName: string;
+    /** Prefix for the data. */
+    prefix: string;
+    /** Data content. */
+    data: string;
+    /** Entity key of the data. */
+    entityKey: string;
+    /** Last updated timestamp of the data. */
+    lastUpdated: string;
+    /** Type of monitoring data. */
+    typeMonitoringData: ETypeMonitoringData;
+    /** Center coordinates of the data. */
+    center: number[];
+}
+
+/**
+ * Enum representing different types of pollution.
+ */
 export enum EPollution {
+    /** Carbon Monoxide pollution type. */
     CarbonMonoxide = 0,
+    /** Nitrogen Dioxide pollution type. */
     NitrogenDioxide = 1,
+    /** Sulphur Dioxide pollution type. */
     SulphurDioxide = 2,
+    /** Ozone pollution type. */
     Ozone = 3,
-    Dust = 4,
-    Ammonia = 5,
-    Pm10 = 6,
-    Pm25 = 7,
-    AerosolOpticalDepth = 8,
-    UvIndex = 9,
-    UvIndexClearSky = 10,
-    AlderPollen = 11,
-    BirchPollen = 12,
-    GrassPollen = 13,
-    MugwortPollen = 14,
-    OlivePollen = 15,
-    RagweedPollen = 16,
+    /** PM10 (Particulate Matter 10) pollution type. */
+    Pm10 = 4,
+    /** PM2.5 (Particulate Matter 2.5) pollution type. */
+    Pm25 = 5
 }
 
 /**
@@ -74,10 +111,43 @@ export interface IAirQuality {
     timeStamp: string;
 }
 
+/**
+ * Interface representing the state of the EcoSensor.
+ */
 export interface IEcoSensorState {
+    /** Selected pollution type. */
     pollutionSelected?: EPollution | undefined;
+    /** Array of air quality data. */
+    airQualityData: IAirQualityData[] | undefined;
 }
 
+/**
+ * Interface representing actions that can be performed on the EcoSensor state.
+ */
 export interface IEcoSensorActions {
+    /**
+     * Sets the selected pollution type.
+     *
+     * @param {EPollution | undefined} value - The pollution type to set.
+     */
     setPollutionSelected: (value: EPollution | undefined) => void;
+
+    /**
+     * Sets the air quality data.
+     *
+     * @param {IAirQualityData[] | undefined} data - The air quality data to set.
+     */
+    setAirQualityData: (data: IAirQualityData[] | undefined) => void;
+}
+
+/**
+ * Enum representing different types of monitoring data.
+ */
+export enum ETypeMonitoringData {
+    /** Air quality monitoring data type. */
+    AirQuality = 0,
+    /** Flood monitoring data type. */
+    Flood = 1,
+    /** Landslide monitoring data type. */
+    LandSlide = 2
 }
