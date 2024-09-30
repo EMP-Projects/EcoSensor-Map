@@ -24,7 +24,8 @@ import {
     getProperty
 } from "@/utils";
 import {useViewportSize} from '@mantine/hooks';
-import {LoadingOverlay} from "@mantine/core";
+import {LoadingOverlay, Container} from "@mantine/core";
+import {MapLegend} from "@/components/MapLegend";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -32,7 +33,7 @@ export function MapEcoSensor(props: IMapState) {
     const [position, setPosition] = useState<number[]>([]);
     const containerMapRef = useRef<HTMLDivElement>(null);
     const divMapRef = useRef<HTMLDivElement>(null);
-    const { height, width } = useViewportSize();
+    const { height } = useViewportSize();
     const { source } = props;
 
     const { pollutionSelected } = useEcoSensorContext();
@@ -47,6 +48,15 @@ export function MapEcoSensor(props: IMapState) {
         },
         trackUserLocation: true
     }), []);
+
+    const containerProps = {
+        h: height - 60,
+        left: 0,
+        top: 0,
+        fluid: true,
+        padding: 0,
+        margin: 0
+    };
 
     map?.on('mousemove', (e) => {
         console.log(`Mouse move event at ${e.lngLat}`);
@@ -160,8 +170,11 @@ export function MapEcoSensor(props: IMapState) {
 
         // Filter the GeoJson data
         const layers : IAirQualityLayer[] = _.map(geoJson.features, (feature: any) => {
+            // Get the OSM properties
             const propertyOsm : IOsm = getProperty<IOsm>(feature, "OSM");
+            // Get the air quality properties
             const propertiesAirQuality : IAirQuality[] = getArrayProperty<IAirQuality>(feature, "Data") ;
+            // Sort the air quality data by date
             const propertiesAirQualitySorted : IAirQuality[] = _.sortBy(propertiesAirQuality, (property: IAirQuality) => property.date);
 
             // Filter the air quality data to get the properties from today
@@ -170,6 +183,7 @@ export function MapEcoSensor(props: IMapState) {
                 const dateAq : number = DateTime.fromISO(property.date).toMillis();
                 // Get the start and end date in milliseconds from now to 1 hour
                 const dateStart : number = DateTime.now().toUTC().toMillis();
+                // Get the end date in milliseconds from now to 1 hour
                 const dateEnd : number = DateTime.now().plus({hours: 1}).toUTC().toMillis();
                 // Return the properties from today
                 return dateAq > dateStart && dateAq <= dateEnd;
@@ -300,27 +314,25 @@ export function MapEcoSensor(props: IMapState) {
         });
 
         setIsLoading(false);
-        map.redraw();
     }, [map, addLayers, removeLayers, filterGeoJson, pollutionSelected]);
 
     useEffect(() => {
         if (!map || !source || !pollutionSelected) return;
         // Add the GeoJson to the map
         map.on('load', async () => await addGeoJson(source));
+        map.on('zoomend', (e) => console.log(e.target.getBounds() as LngLatBounds));
     }, [map, addGeoJson, setMapLibre, source, pollutionSelected]);
 
     useEffect(() => {
         if (!pollutionSelected || !source || !map) return;
-        console.log(`Pollution selected: ${pollutionSelected}`);
-        addGeoJson(source).then(() => console.log(`GeoJson added`));
+        addGeoJson(source).then(() => map.redraw());
     }, [addGeoJson, pollutionSelected, source, map]);
 
     return (
-        <>
-            <LoadingOverlay visible={isLoading} zIndex={9000} />
-            <div ref={containerMapRef}>
-                <div ref={divMapRef} style={{ width: width, height: height - 56, position: 'relative' }} />
-            </div>
-        </>
+        <Container {...containerProps}>
+            <LoadingOverlay visible={isLoading} />
+            <MapLegend />
+            <div ref={divMapRef} style={{ height: height - 60, position: "relative" }} />
+        </Container>
     );
 }

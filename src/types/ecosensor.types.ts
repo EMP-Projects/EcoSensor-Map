@@ -33,6 +33,12 @@ export interface IOsm {
     timeStamp: string;
 }
 
+export interface IEUAirQualityIndex {
+    id: number;
+    color: string;
+    name: string;
+}
+
 /**
  * Interface representing air quality data.
  */
@@ -119,6 +125,8 @@ export interface IEcoSensorState {
     pollutionSelected?: EPollution | undefined;
     /** Array of air quality data. */
     airQualityData: IAirQualityData[] | undefined;
+    /** Array of air quality properties from today. */
+    propertiesFromToday: IAirQuality[] | undefined;
 }
 
 /**
@@ -138,6 +146,13 @@ export interface IEcoSensorActions {
      * @param {IAirQualityData[] | undefined} data - The air quality data to set.
      */
     setAirQualityData: (data: IAirQualityData[] | undefined) => void;
+
+    /**
+     * Sets the properties from today.
+     *
+     * @param {IAirQuality[] | undefined} data - The properties from today to set.
+     */
+    setPropertiesFromToday: (data: IAirQuality[] | undefined) => void;
 }
 
 /**

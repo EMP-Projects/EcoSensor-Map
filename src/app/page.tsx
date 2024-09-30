@@ -79,7 +79,6 @@ export default function Home() {
                       }}
                       style={style}
                       projection={projection}></MapEcoSensor>
-
       </>
     );
 }
