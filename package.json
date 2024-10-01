@@ -29,6 +29,7 @@
     "@tiptap/extension-link": "^2.7.4",
     "@tiptap/react": "^2.7.4",
     "@tiptap/starter-kit": "^2.7.4",
+    "@turf/boolean-contains": "^7.1.0",
     "@turf/projection": "^7.1.0",
     "@turf/turf": "^7.1.0",
     "@watergis/mapbox-gl-legend": "^1.2.6",

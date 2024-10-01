@@ -1,3 +1,4 @@
+import {LngLatBounds} from "maplibre-gl";
 
 /**
  * Interface representing an air quality layer.
@@ -59,6 +60,8 @@ export interface IAirQualityData {
     typeMonitoringData: ETypeMonitoringData;
     /** Center coordinates of the data. */
     center: number[];
+    /** Bounding box coordinates of the data. */
+    extent: number[];
 }
 
 /**
@@ -126,7 +129,8 @@ export interface IEcoSensorState {
     /** Array of air quality data. */
     airQualityData: IAirQualityData[] | undefined;
     /** Array of air quality properties from today. */
-    propertiesFromToday: IAirQuality[] | undefined;
+    geoJson: any;
+    extentMap?: LngLatBounds | undefined;
 }
 
 /**
@@ -152,7 +156,14 @@ export interface IEcoSensorActions {
      *
      * @param {IAirQuality[] | undefined} data - The properties from today to set.
      */
-    setPropertiesFromToday: (data: IAirQuality[] | undefined) => void;
+    setGeoJson: (data: any) => void;
+
+    /**
+     * Sets the extent map.
+     *
+     * @param {number[]} extent - The extent map to set.
+     */
+    setExtentMap: (extent: LngLatBounds | undefined) => void;
 }
 
 /**

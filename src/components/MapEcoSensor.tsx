@@ -21,11 +21,12 @@ import {
     fetchAirQualityDataAndConvertToWgs84,
     getArrayProperty,
     getNewColorScale,
-    getProperty
+    getProperty, IsIntersection
 } from "@/utils";
 import {useViewportSize} from '@mantine/hooks';
 import {LoadingOverlay, Container} from "@mantine/core";
 import {MapLegend} from "@/components/MapLegend";
+import {toWgs84} from "@turf/projection";
 
 export function MapEcoSensor(props: IMapState) {
     const [map, setMap] = useState<Map>();
@@ -36,7 +37,7 @@ export function MapEcoSensor(props: IMapState) {
     const { height } = useViewportSize();
     const { source } = props;
 
-    const { pollutionSelected } = useEcoSensorContext();
+    const { pollutionSelected, setGeoJson, setExtentMap, extentMap } = useEcoSensorContext();
 
     // Get the map context
     const { setMapLibre, center } = useMapContext();
@@ -284,11 +285,22 @@ export function MapEcoSensor(props: IMapState) {
 
         if (!map || !source || _.size(source.layers) == 0) return;
 
-        const layers : IAirQualityData[] = _.filter(source.layers, (layer: IAirQualityData) => layer.pollution as EPollution == pollutionSelected);
+        // Filter the layers based on the extent of the map
+        const layersExtent = extentMap ? _.filter(source.layers, (layer: IAirQualityData) => {
+            const polyLayerExtent = turf.bboxPolygon(layer.extent as number[]);
+            const polyLayerExtentWgs84 = toWgs84(turf.feature(polyLayerExtent));
+            return IsIntersection(turf.bbox(polyLayerExtentWgs84), [extentMap?.getSouthWest().lat as number, extentMap?.getSouthWest().lng as number, extentMap?.getNorthEast().lat as number, extentMap?.getNorthEast().lng as number]);
+        }) : source.layers;
+        const layers : IAirQualityData[] = _.filter(layersExtent, (layer: IAirQualityData) => layer.pollution as EPollution == pollutionSelected);
 
-        if (_.size(layers) == 0) return;
+        if (_.size(layers) == 0) {
+            console.log('No layers to display');
+            return;
+        }
 
         setIsLoading(true);
+        // Set the GeoJson data to the context
+        setGeoJson(source);
 
         _.forEach(layers, async (layer: IAirQualityData) => {
 
@@ -314,14 +326,14 @@ export function MapEcoSensor(props: IMapState) {
         });
 
         setIsLoading(false);
-    }, [map, addLayers, removeLayers, filterGeoJson, pollutionSelected]);
+    }, [map, addLayers, removeLayers, filterGeoJson, pollutionSelected, setGeoJson, extentMap]);
 
     useEffect(() => {
         if (!map || !source || !pollutionSelected) return;
         // Add the GeoJson to the map
         map.on('load', async () => await addGeoJson(source));
-        map.on('zoomend', (e) => console.log(e.target.getBounds() as LngLatBounds));
-    }, [map, addGeoJson, setMapLibre, source, pollutionSelected]);
+        map.on('zoomend', (e) => setExtentMap(e.target.getBounds() as LngLatBounds));
+    }, [map, addGeoJson, setMapLibre, source, pollutionSelected, setExtentMap]);
 
     useEffect(() => {
         if (!pollutionSelected || !source || !map) return;

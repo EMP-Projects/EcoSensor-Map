@@ -2,7 +2,7 @@ import {toWgs84} from "@turf/projection";
 import {EPollution, ETypeMonitoringData, IAirQualityData} from "@/types";
 import _ from "lodash";
 import chroma from 'chroma-js';
-
+import booleanWithin from "@turf/boolean-contains";
 
 export async function fetchAirQualityDataAndConvertToWgs84(airQualityData : IAirQualityData) : Promise<any> {
 
@@ -19,6 +19,19 @@ export async function fetchAirQualityDataAndConvertToWgs84(airQualityData : IAir
         console.error(error);
         return null;
     }
+}
+
+/**
+ * Checks if a bounding box intersects with a map extent.
+ *
+ * @param {number[]} bbox - The bounding box to check.
+ * @param {number[]} extentMap - The map extent to check against.
+ * @returns {boolean} True if the bounding box intersects with the map extent, otherwise false.
+ */
+export function IsIntersection(bbox : number[], extentMap : number[]) : boolean {
+    const poly = turf.bboxPolygon(bbox);
+    const extent = turf.bboxPolygon(extentMap);
+    return booleanWithin(poly, extent);
 }
 
 /**
