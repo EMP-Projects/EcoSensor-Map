@@ -1,6 +1,6 @@
 'use client'
 
-import { Progress, Table, ColorSwatch } from '@mantine/core';
+import { Table, ColorSwatch } from '@mantine/core';
 import React from "react";
 import _ from "lodash";
 import {IEUAirQualityIndex} from "@/types";
